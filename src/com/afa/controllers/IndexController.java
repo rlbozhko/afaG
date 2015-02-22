@@ -24,7 +24,7 @@ public class IndexController extends HttpServlet {
 		if (url != null) {
 			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url);
 			request.setAttribute("feedbacksList", feedbacksList);
-		}
+		}//
 		if (url != null && starsText != null) {
 			int stars = Integer.parseInt(starsText);
 			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url,
