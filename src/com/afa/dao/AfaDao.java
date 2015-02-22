@@ -18,11 +18,15 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import com.afa.entities.Feedback;
+import com.cybozu.labs.langdetect.Detector;
+import com.cybozu.labs.langdetect.DetectorFactory;
+import com.cybozu.labs.langdetect.LangDetectException;
 
 public class AfaDao {
 
 	private static final int THREE_DAYS_IN_MILLISECONDS = 3 * 24 * 60 * 60
 			* 1000;
+	private static int countDetectorFactory = 0;
 
 	// парсинг отзывов
 	public static List<Feedback> getFeedbacksList(String url) {
@@ -144,8 +148,37 @@ public class AfaDao {
 
 			pageIndex = pageIndex + 1;
 		} while (html.length() > 300);
+
 		// записываем в Ѕƒ отобранные записи если они есть
 		if (!feedbacksList.isEmpty()) {
+			// “ак можно узнать кака€ директори€ текуща€
+			// System.out.println(new File(".").getAbsolutePath());
+			if (countDetectorFactory == 0) {
+				try {
+					DetectorFactory.clear();
+					DetectorFactory
+							.loadProfile("C:\\Java\\workspace1\\.metadata\\.plugins\\org.eclipse.wst.server.core\\tmp0\\wtpwebapps\\AFA\\WEB-INF\\lib\\profiles");
+					countDetectorFactory = countDetectorFactory + 1;
+					// System.out.println("countDetectorFactory = "
+					// + countDetectorFactory);
+				} catch (LangDetectException e) {
+					e.printStackTrace();
+				}
+			}
+			for (Feedback each : feedbacksList) {
+				if (each.getText().length() > 10) {
+					try {
+						Detector detector = DetectorFactory.create();
+						detector.append(each.getText());
+
+						String language = detector.detect();
+						each.setLanguage(language);
+					} catch (LangDetectException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
 			cacheFeedbacksList(feedbacksList);
 		}
 
@@ -227,7 +260,7 @@ public class AfaDao {
 			// ставить мин 100 секунд с учетом, что сам запрос может секунд
 			// 40-50
 			// выполн€тс€ с учетом задержек при выкачке из инета
-			// 24*60*60*1000 1 день
+			// 24*60*60*1000 = 1 день
 			long scanDateSQL = resultSet.getLong("scan_date");
 			if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
 				String sqlDelete = "DELETE FROM feedbacks WHERE item_id = "

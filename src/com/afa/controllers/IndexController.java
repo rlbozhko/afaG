@@ -21,14 +21,18 @@ public class IndexController extends HttpServlet {
 
 		String url = request.getParameter("url");
 		String starsText = request.getParameter("stars");
-		if (url != null) {
-			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url);
-			request.setAttribute("feedbacksList", feedbacksList);
-		}////
-		if (url != null && starsText != null) {
+		String language = request.getParameter("language");
+
+// не совсем понятно зачем это было нужно если поля required...		
+//		if (url != null) {
+//			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url);
+//			request.setAttribute("feedbacksList", feedbacksList);
+//		}
+		
+		if (url != null && starsText != null  && language  != null) {
 			int stars = Integer.parseInt(starsText);
 			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url,
-					stars);
+					stars, language);
 			request.setAttribute("feedbacksList", feedbacksList);
 		}
 

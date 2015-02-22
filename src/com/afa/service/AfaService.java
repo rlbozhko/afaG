@@ -11,15 +11,26 @@ public class AfaService {
 
 	// В зависимости от количества звезд выбранных на странице,
 	// мы удаляем из списка все записи с не таким к-вом звезд
-	public static List<Feedback> getFeedbacksList(String url, int stars) {
+	public static List<Feedback> getFeedbacksList(String url, int stars,
+			String language) {
 
 		List<Feedback> feedbacksList = getFeedbacksList(url);
 		Iterator<Feedback> iterator = feedbacksList.iterator();
 
 		while (iterator.hasNext()) {
 			Feedback feedback = iterator.next();
-			if (feedback.getStars() == null || feedback.getStars() != stars) {
-				iterator.remove();
+
+			if (stars != 999) {
+				if (feedback.getStars() == null || feedback.getStars() != stars) {
+					iterator.remove();
+				}
+			}
+
+			if (!language.equals("ALL")) {
+				if (feedback.getLanguage() == null
+						|| !feedback.getLanguage().equals("language")) {
+					iterator.remove();
+				}
 			}
 
 		}
