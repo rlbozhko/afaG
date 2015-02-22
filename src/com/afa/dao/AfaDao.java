@@ -6,9 +6,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +20,9 @@ import java.util.concurrent.TimeUnit;
 import com.afa.entities.Feedback;
 
 public class AfaDao {
+
+	private static final int THREE_DAYS_IN_MILLISECONDS = 3 * 24 * 60 * 60
+			* 1000;
 
 	// парсинг отзывов
 	public static List<Feedback> getFeedbacksList(String url) {
@@ -73,11 +78,11 @@ public class AfaDao {
 					+ itemId + "&type=default&page=" + pageIndex;
 			// в html загрузили ОДНУ страницу с отзывами
 			html = getPageHtml(urlFeedback);
-			// задержка чтоб на али не сработала защита от роботов, 200 и 100
-			// вроде тоже работают
-			// тоже подходит
+			// задержка чтоб на али не сработала защита от роботов, 200,100
+			// перестали работать используй 1000
+
 			try {
-				TimeUnit.MILLISECONDS.sleep(500);
+				TimeUnit.MILLISECONDS.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -150,12 +155,8 @@ public class AfaDao {
 	public static void cacheFeedbacksList(List<Feedback> feedbacksList) {
 		String sql = "INSERT INTO feedbacks (item_id, language, scan_date, country, stars, text) VALUES ";
 
-		for (Feedback feedback : feedbacksList) {
-			sql = sql + "(" + feedback.getItemId() + ", '"
-					+ feedback.getLanguage() + "', " + feedback.getScanDate()
-					+ ", '" + feedback.getCountry() + "', "
-					+ feedback.getStars() + ", '"
-					+ feedback.getText().replace("'", "\\'") + "'), ";
+		for (int i = 0; i < feedbacksList.size(); i++) {
+			sql = sql + "(?, ?, ?, ?, ?, ?), ";
 		}
 		sql = sql.substring(0, sql.length() - 2);
 
@@ -169,8 +170,35 @@ public class AfaDao {
 				.getConnection(
 						"jdbc:mysql://localhost:3306/afa?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8",
 						"root", "123456");
-				Statement statement = connection.createStatement();) {
-			statement.execute(sql);
+				PreparedStatement preparedStatement = connection
+						.prepareStatement(sql);) {
+
+			for (int i = 0; i < feedbacksList.size(); i++) {
+				Feedback feedback = feedbacksList.get(i);
+				int j = i * 6 + 1;
+
+				preparedStatement.setLong(j, feedback.getItemId());
+				preparedStatement.setString(
+						j + 1,
+						feedback.getLanguage() == null ? "" : feedback
+								.getLanguage());
+				preparedStatement.setLong(j + 2, feedback.getScanDate());
+				preparedStatement.setString(
+						j + 3,
+						feedback.getCountry() == null ? "" : feedback
+								.getCountry());
+
+				if (feedback.getStars() == null) {
+					preparedStatement.setNull(j + 4, Types.NULL);
+				} else {
+					preparedStatement.setInt(j + 4, feedback.getStars());
+				}
+
+				preparedStatement.setString(j + 5,
+						feedback.getText() == null ? "" : feedback.getText());
+			}
+
+			preparedStatement.execute();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -193,14 +221,15 @@ public class AfaDao {
 				ResultSet resultSet = statement.executeQuery(sql + " LIMIT 1");) {
 
 			if (!resultSet.next()) {
-				// Collections.emptyList();
 				return Collections.emptyList();
 			}
 
-			// 100 секунд с учетом что сам запрос может секунд 40-50 выполнятся?
-
+			// ставить мин 100 секунд с учетом, что сам запрос может секунд
+			// 40-50
+			// выполнятся с учетом задержек при выкачке из инета
+			// 24*60*60*1000 1 день
 			long scanDateSQL = resultSet.getLong("scan_date");
-			if ((scanDate - scanDateSQL) > (100 * 1000)) {
+			if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
 				String sqlDelete = "DELETE FROM feedbacks WHERE item_id = "
 						+ itemId;
 				statement.execute(sqlDelete);
