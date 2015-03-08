@@ -1,44 +1,37 @@
 package com.afa.controllers;
 
-import java.io.IOException;
 import java.util.List;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.afa.entities.Feedback;
 import com.afa.service.AfaService;
 
-@SuppressWarnings("serial")
-@WebServlet("/index.html")
-public class IndexController extends HttpServlet {
+@Controller
+public class IndexController {
 
-	public void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	@RequestMapping(value = "/index.action", method = RequestMethod.GET)
+	public ModelAndView getIndex(
+			@RequestParam(value = "url", required = false) String url,
+			@RequestParam(value = "stars", required = false) Integer stars,
+			@RequestParam(value = "language", required = false) String language) {
 
-		String url = request.getParameter("url");
-		String starsText = request.getParameter("stars");
-		String language = request.getParameter("language");
+		ModelAndView mav = new ModelAndView("/WEB-INF/jsp/index.jsp");
 
-// не совсем понятно зачем это было нужно если поля required...		
-//		if (url != null) {
-//			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url);
-//			request.setAttribute("feedbacksList", feedbacksList);
-//		}
-		
-		if (url != null && starsText != null  && language  != null) {
-			int stars = Integer.parseInt(starsText);
+		if (url != null && stars != null && language != null) {
 			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url,
 					stars, language);
-			request.setAttribute("feedbacksList", feedbacksList);
+			mav.addObject("feedbacksList", feedbacksList);
 		}
-// эта строка для того что бы не вводить ссылку повторно, передаем по кругу ссылку
-		request.setAttribute("url", url);
-		request.getRequestDispatcher("/WEB-INF/jsp/index.jsp").forward(request,
-				response);
+		// эта строка для того что бы не вводить ссылку повторно, передаем по
+		// кругу ссылку
+		mav.addObject("url", url);
+
+		return mav;
 	}
 
 }
