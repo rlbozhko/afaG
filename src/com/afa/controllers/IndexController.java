@@ -35,7 +35,8 @@ public class IndexController extends HttpServlet {
 					stars, language);
 			request.setAttribute("feedbacksList", feedbacksList);
 		}
-
+// эта строка для того что бы не вводить ссылку повторно, передаем по кругу ссылку
+		request.setAttribute("url", url);
 		request.getRequestDispatcher("/WEB-INF/jsp/index.jsp").forward(request,
 				response);
 	}

@@ -11,7 +11,7 @@
 	<form method="get">
 		<p>
 			<input type="text" name="url" required
-				style="width: 1000px; height: 25px;">
+				style="width: 1000px; height: 25px;" value="${url}">
 		</p>
 		<p>
 			<select name="stars" required>
