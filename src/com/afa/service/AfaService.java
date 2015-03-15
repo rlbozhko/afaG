@@ -192,8 +192,8 @@ public class AfaService {
 	}
 
 	@Transactional
-	private List<Feedback> getPageFeedbacksList(long itemId,
-			long scanDate, String html) {
+	private List<Feedback> getPageFeedbacksList(long itemId, long scanDate,
+			String html) {
 		int countryFirstIndex = 0;
 		List<Feedback> feedbacksList = new ArrayList<>();
 
