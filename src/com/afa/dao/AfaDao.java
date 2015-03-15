@@ -1,11 +1,8 @@
 package com.afa.dao;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.hibernate.SessionFactory;
@@ -14,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Repository;
 
 import com.afa.entities.Feedback;
@@ -68,10 +64,10 @@ public class AfaDao {
 	}
 
 	public List<Feedback> getCachedFeedbacksList(long itemId, long scanDate) {
-//		boolean isCleared = clearOldFeedbacks(itemId, scanDate);
-//		if (isCleared) {
-//			return Collections.emptyList();
-//		}
+		// boolean isCleared = clearOldFeedbacks(itemId, scanDate);
+		// if (isCleared) {
+		// return Collections.emptyList();
+		// }
 
 		List<Feedback> feedbacksList = sessionFactory.getCurrentSession()
 				.createCriteria(Feedback.class)
@@ -98,8 +94,7 @@ public class AfaDao {
 		// выполнятся с учетом задержек при выкачке из инета
 		// 24*60*60*1000 = 1 день
 
-		// if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
-		if (true) {
+		if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
 			// "DELETE FROM feedbacks WHERE item_id
 			String hql = "delete from Feedback where itemId = " + itemId;
 			sessionFactory.getCurrentSession().createQuery(hql).executeUpdate();
