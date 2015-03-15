@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.afa.dao.AfaDao;
 import com.afa.entities.Feedback;
@@ -40,6 +41,7 @@ public class AfaService {
 
 	// В зависимости от количества звезд и языка выбранных на странице,
 	// мы удаляем из списка все записи с не таким к-вом звезд и языком
+	@Transactional
 	public List<Feedback> getFeedbacksList(String url, int stars,
 			String language) {
 
@@ -78,6 +80,7 @@ public class AfaService {
 		return feedbacksList;
 	}
 
+	@Transactional
 	public long getItemId(String url) {
 		// пример строки которая может быть передана в переменной url
 		// http://www.aliexpress.com/item/Original-HUAWEI-Honor-3C-5-0-Quad-Core-Mobile-Phone-MTK6582-IPS-1280-720-1GB-RAM/1594611489.html
@@ -102,6 +105,7 @@ public class AfaService {
 	}
 
 	// парсинг отзывов
+	@Transactional
 	public List<Feedback> getFeedbacksList(String url) {
 
 		// если нам передали неверный url
@@ -150,6 +154,7 @@ public class AfaService {
 		return feedbacksList;
 	}
 
+	@Transactional
 	public List<Feedback> getAllFeedbacksList(long itemId, long scanDate) {
 		// если данные из кэша не получены то вытягиваем их из интернета
 		List<Feedback> feedbacksList = new ArrayList<>();
@@ -186,6 +191,7 @@ public class AfaService {
 		return feedbacksList;
 	}
 
+	@Transactional
 	private List<Feedback> getPageFeedbacksList(long itemId,
 			long scanDate, String html) {
 		int countryFirstIndex = 0;

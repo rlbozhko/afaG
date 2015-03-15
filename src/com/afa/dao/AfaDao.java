@@ -8,9 +8,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -25,6 +26,8 @@ public class AfaDao {
 			* 1000;
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	@Autowired
+	private SessionFactory sessionFactory;
 
 	public void cacheFeedbacksList(List<Feedback> feedbacksList) {
 		String sql = "INSERT INTO feedbacks (item_id, language, scan_date, country, stars, text) VALUES ";
@@ -65,67 +68,45 @@ public class AfaDao {
 	}
 
 	public List<Feedback> getCachedFeedbacksList(long itemId, long scanDate) {
-		String sql = "SELECT * FROM feedbacks WHERE item_id = " + itemId;
-		List<Feedback> feedbacksList = new ArrayList<>();
+//		boolean isCleared = clearOldFeedbacks(itemId, scanDate);
+//		if (isCleared) {
+//			return Collections.emptyList();
+//		}
 
-		boolean isCleared = clearOldFeedbacks(itemId, scanDate);
-		if (isCleared) {
-			return Collections.emptyList();
-		}
-
-		jdbcTemplate.query(sql, new RowCallbackHandler() {
-			@Override
-			public void processRow(ResultSet rs) throws SQLException {
-				Feedback feedback = new Feedback();
-
-				long id = rs.getLong("id");
-				feedback.setId(id);
-
-				long itemId2 = rs.getLong("item_id");
-				feedback.setItemId(itemId2);
-
-				String language = rs.getString("language");
-				feedback.setLanguage(language);
-
-				String country = rs.getString("country");
-				feedback.setCountry(country);
-
-				int stars = rs.getInt("stars");
-				feedback.setStars(stars);
-
-				String text = rs.getString("text");
-				feedback.setText(text);
-
-				feedbacksList.add(feedback);
-			}
-		});
+		List<Feedback> feedbacksList = sessionFactory.getCurrentSession()
+				.createCriteria(Feedback.class)
+				.add(Restrictions.eq("itemId", itemId)).list();
 
 		return feedbacksList;
 	}
 
 	private boolean clearOldFeedbacks(long itemId, long scanDate) {
-		String sql = "SELECT scan_date FROM feedbacks WHERE item_id = "
-				+ itemId + " LIMIT 1";
+		Object result = sessionFactory.getCurrentSession()
+				.createCriteria(Feedback.class)
+				.add(Restrictions.eq("itemId", itemId)).setMaxResults(1)
+				.uniqueResult();
 
-		Long scanDateSQL = null;
-		try {
-			scanDateSQL = jdbcTemplate.queryForObject(sql, Long.class);
-		} catch (EmptyResultDataAccessException e) {
+		if (result == null) {
 			return true;
 		}
+
+		Feedback feedback = (Feedback) result;
+		Long scanDateSQL = feedback.getScanDate();
 
 		// ставить мин 100 секунд с учетом, что сам запрос может секунд
 		// 40-50
 		// выполнятся с учетом задержек при выкачке из инета
 		// 24*60*60*1000 = 1 день
 
-		if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
-			String sqlDelete = "DELETE FROM feedbacks WHERE item_id = "
-					+ itemId;
-			jdbcTemplate.execute(sqlDelete);
+		// if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
+		if (true) {
+			// "DELETE FROM feedbacks WHERE item_id
+			String hql = "delete from Feedback where itemId = " + itemId;
+			sessionFactory.getCurrentSession().createQuery(hql).executeUpdate();
 			return true;
 		}
 
 		return false;
 	}
+
 }
