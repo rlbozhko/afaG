@@ -1,11 +1,14 @@
 package com.afa.service;
 
-//Выборка по количеству звезд + парсинг отзывов	
+//Выборка по количеству звезд + парсинг отзывов
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.afa.dao.AfaDao;
 import com.afa.entities.Feedback;
@@ -14,9 +17,12 @@ import com.cybozu.labs.langdetect.Detector;
 import com.cybozu.labs.langdetect.DetectorFactory;
 import com.cybozu.labs.langdetect.LangDetectException;
 
+@Service
 public class AfaService {
 
 	private static int countDetectorFactory = 0;
+	@Autowired
+	private AfaDao afaDao;
 
 	private static void loadDetectorFactory() {
 		if (countDetectorFactory == 0) {
@@ -34,7 +40,7 @@ public class AfaService {
 
 	// В зависимости от количества звезд и языка выбранных на странице,
 	// мы удаляем из списка все записи с не таким к-вом звезд и языком
-	public static List<Feedback> getFeedbacksList(String url, int stars,
+	public List<Feedback> getFeedbacksList(String url, int stars,
 			String language) {
 
 		List<Feedback> feedbacksList = getFeedbacksList(url);
@@ -72,7 +78,7 @@ public class AfaService {
 		return feedbacksList;
 	}
 
-	public static long getItemId(String url) {
+	public long getItemId(String url) {
 		// пример строки которая может быть передана в переменной url
 		// http://www.aliexpress.com/item/Original-HUAWEI-Honor-3C-5-0-Quad-Core-Mobile-Phone-MTK6582-IPS-1280-720-1GB-RAM/1594611489.html
 		// выделяем уникальный идентификатор страницы-продукта(на али иногда для
@@ -96,7 +102,7 @@ public class AfaService {
 	}
 
 	// парсинг отзывов
-	public static List<Feedback> getFeedbacksList(String url) {
+	public List<Feedback> getFeedbacksList(String url) {
 
 		// если нам передали неверный url
 		if (url.lastIndexOf("aliexpress.com/") == -1) {
@@ -105,13 +111,13 @@ public class AfaService {
 
 		// пример строки которая может быть передана в переменной url
 		// http://www.aliexpress.com/item/Original-HUAWEI-Honor-3C-5-0-Quad-Core-Mobile-Phone-MTK6582-IPS-1280-720-1GB-RAM/1594611489.html
-		long itemId = AfaService.getItemId(url);
+		long itemId = getItemId(url);
 
 		// Для вопросов кэширования запомнили текущую дату
 		long scanDate = System.currentTimeMillis();
 
 		// если данные из кэша получены то их и возвращаем
-		List<Feedback> feedbacksList = AfaDao.getCachedFeedbacksList(itemId,
+		List<Feedback> feedbacksList = afaDao.getCachedFeedbacksList(itemId,
 				scanDate);
 		if (!feedbacksList.isEmpty()) {
 			return feedbacksList;
@@ -138,13 +144,13 @@ public class AfaService {
 				}
 			}
 
-			AfaDao.cacheFeedbacksList(feedbacksList);
+			afaDao.cacheFeedbacksList(feedbacksList);
 		}
 
 		return feedbacksList;
 	}
 
-	public static List<Feedback> getAllFeedbacksList(long itemId, long scanDate) {
+	public List<Feedback> getAllFeedbacksList(long itemId, long scanDate) {
 		// если данные из кэша не получены то вытягиваем их из интернета
 		List<Feedback> feedbacksList = new ArrayList<>();
 
@@ -180,7 +186,7 @@ public class AfaService {
 		return feedbacksList;
 	}
 
-	private static List<Feedback> getPageFeedbacksList(long itemId,
+	private List<Feedback> getPageFeedbacksList(long itemId,
 			long scanDate, String html) {
 		int countryFirstIndex = 0;
 		List<Feedback> feedbacksList = new ArrayList<>();

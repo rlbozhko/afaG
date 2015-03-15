@@ -1,24 +1,32 @@
 package com.afa.dao;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.stereotype.Repository;
+
 import com.afa.entities.Feedback;
 
+@Repository
 public class AfaDao {
 
 	private static final int THREE_DAYS_IN_MILLISECONDS = 3 * 24 * 60 * 60
 			* 1000;
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
-	public static void cacheFeedbacksList(List<Feedback> feedbacksList) {
+	public void cacheFeedbacksList(List<Feedback> feedbacksList) {
 		String sql = "INSERT INTO feedbacks (item_id, language, scan_date, country, stars, text) VALUES ";
 
 		for (int i = 0; i < feedbacksList.size(); i++) {
@@ -26,129 +34,98 @@ public class AfaDao {
 		}
 		sql = sql.substring(0, sql.length() - 2);
 
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+		jdbcTemplate.execute(sql, new PreparedStatementCallback<Boolean>() {
+			@Override
+			public Boolean doInPreparedStatement(PreparedStatement ps)
+					throws SQLException, DataAccessException {
+				for (int i = 0; i < feedbacksList.size(); i++) {
+					Feedback feedback = feedbacksList.get(i);
+					int j = i * 6 + 1;
 
-		try (Connection connection = DriverManager
-				.getConnection(
-						"jdbc:mysql://localhost:3306/afa?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8",
-						"root", "123456");
-				PreparedStatement preparedStatement = connection
-						.prepareStatement(sql);) {
+					ps.setLong(j, feedback.getItemId());
+					ps.setString(j + 1, feedback.getLanguage() == null ? ""
+							: feedback.getLanguage());
+					ps.setLong(j + 2, feedback.getScanDate());
+					ps.setString(j + 3, feedback.getCountry() == null ? ""
+							: feedback.getCountry());
 
-			for (int i = 0; i < feedbacksList.size(); i++) {
-				Feedback feedback = feedbacksList.get(i);
-				int j = i * 6 + 1;
+					if (feedback.getStars() == null) {
+						ps.setNull(j + 4, Types.NULL);
+					} else {
+						ps.setInt(j + 4, feedback.getStars());
+					}
 
-				preparedStatement.setLong(j, feedback.getItemId());
-				preparedStatement.setString(
-						j + 1,
-						feedback.getLanguage() == null ? "" : feedback
-								.getLanguage());
-				preparedStatement.setLong(j + 2, feedback.getScanDate());
-				preparedStatement.setString(
-						j + 3,
-						feedback.getCountry() == null ? "" : feedback
-								.getCountry());
-
-				if (feedback.getStars() == null) {
-					preparedStatement.setNull(j + 4, Types.NULL);
-				} else {
-					preparedStatement.setInt(j + 4, feedback.getStars());
+					ps.setString(j + 5, feedback.getText() == null ? ""
+							: feedback.getText());
 				}
 
-				preparedStatement.setString(j + 5,
-						feedback.getText() == null ? "" : feedback.getText());
+				return null;
 			}
-
-			preparedStatement.execute();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		});
 	}
 
-	public static List<Feedback> getCachedFeedbacksList(long itemId,
-			long scanDate) {
+	public List<Feedback> getCachedFeedbacksList(long itemId, long scanDate) {
 		String sql = "SELECT * FROM feedbacks WHERE item_id = " + itemId;
 		List<Feedback> feedbacksList = new ArrayList<>();
 
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-
-		boolean isCleared = clearOldFeedbacks(sql, itemId, scanDate);
+		boolean isCleared = clearOldFeedbacks(itemId, scanDate);
 		if (isCleared) {
 			return Collections.emptyList();
 		}
 
-		try (Connection connection = DriverManager.getConnection(
-				"jdbc:mysql://localhost:3306/afa", "root", "123456");
-				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery(sql);) {
-
-			while (resultSet.next()) {
+		jdbcTemplate.query(sql, new RowCallbackHandler() {
+			@Override
+			public void processRow(ResultSet rs) throws SQLException {
 				Feedback feedback = new Feedback();
 
-				long id = resultSet.getLong("id");
+				long id = rs.getLong("id");
 				feedback.setId(id);
 
-				long itemId2 = resultSet.getLong("item_id");
+				long itemId2 = rs.getLong("item_id");
 				feedback.setItemId(itemId2);
 
-				String language = resultSet.getString("language");
+				String language = rs.getString("language");
 				feedback.setLanguage(language);
 
-				String country = resultSet.getString("country");
+				String country = rs.getString("country");
 				feedback.setCountry(country);
 
-				int stars = resultSet.getInt("stars");
+				int stars = rs.getInt("stars");
 				feedback.setStars(stars);
 
-				String text = resultSet.getString("text");
+				String text = rs.getString("text");
 				feedback.setText(text);
 
 				feedbacksList.add(feedback);
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		});
 
 		return feedbacksList;
 	}
 
-	private static boolean clearOldFeedbacks(String sql, long itemId,
-			long scanDate) {
-		try (Connection connection = DriverManager.getConnection(
-				"jdbc:mysql://localhost:3306/afa", "root", "123456");
-				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery(sql + " LIMIT 1");) {
+	private boolean clearOldFeedbacks(long itemId, long scanDate) {
+		String sql = "SELECT scan_date FROM feedbacks WHERE item_id = "
+				+ itemId + " LIMIT 1";
 
-			if (!resultSet.next()) {
-				return true;
-			}
+		Long scanDateSQL = null;
+		try {
+			scanDateSQL = jdbcTemplate.queryForObject(sql, Long.class);
+		} catch (EmptyResultDataAccessException e) {
+			return true;
+		}
 
-			// ставить мин 100 секунд с учетом, что сам запрос может секунд
-			// 40-50
-			// выполнятся с учетом задержек при выкачке из инета
-			// 24*60*60*1000 = 1 день
-			long scanDateSQL = resultSet.getLong("scan_date");
-			if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
-				String sqlDelete = "DELETE FROM feedbacks WHERE item_id = "
-						+ itemId;
-				statement.execute(sqlDelete);
-				return true;
-			}
+		// ставить мин 100 секунд с учетом, что сам запрос может секунд
+		// 40-50
+		// выполнятся с учетом задержек при выкачке из инета
+		// 24*60*60*1000 = 1 день
 
-		} catch (SQLException e) {
-			e.printStackTrace();
+		if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
+			String sqlDelete = "DELETE FROM feedbacks WHERE item_id = "
+					+ itemId;
+			jdbcTemplate.execute(sqlDelete);
+			return true;
 		}
 
 		return false;
 	}
-
 }
