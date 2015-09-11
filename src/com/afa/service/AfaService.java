@@ -1,19 +1,21 @@
 package com.afa.service;
 
 //Выборка по количеству звезд + парсинг отзывов	
+
+import com.afa.dao.AfaDao;
+import com.afa.entities.Feedback;
+import com.afa.utils.Utils;
+import com.cybozu.labs.langdetect.Detector;
+import com.cybozu.labs.langdetect.DetectorFactory;
+import com.cybozu.labs.langdetect.LangDetectException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.afa.dao.AfaDao;
-import com.afa.entities.Feedback;
-import com.afa.utils.Utils;
-//to-do выкачай библиотеку со старого компа или измени алгоритм
-import com.cybozu.labs.langdetect.Detector;
-import com.cybozu.labs.langdetect.DetectorFactory;
-import com.cybozu.labs.langdetect.LangDetectException;
+// to-do выкачай библиотеку со старого компа или измени алгоритм
 
 public class AfaService {
 
