@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import com.afa.dao.AfaDao;
 import com.afa.entities.Feedback;
 import com.afa.utils.Utils;
+//to-do выкачай библиотеку со старого компа или измени алгоритм
 import com.cybozu.labs.langdetect.Detector;
 import com.cybozu.labs.langdetect.DetectorFactory;
 import com.cybozu.labs.langdetect.LangDetectException;
