@@ -1,16 +1,15 @@
 package com.afa.controllers;
 
-import java.io.IOException;
-import java.util.List;
+import com.afa.entities.Feedback;
+import com.afa.service.AfaService;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.afa.entities.Feedback;
-import com.afa.service.AfaService;
+import java.io.IOException;
+import java.util.List;
 
 @SuppressWarnings("serial")
 @WebServlet("/index.html")
@@ -23,7 +22,7 @@ public class IndexController extends HttpServlet {
 		String starsText = request.getParameter("stars");
 		String language = request.getParameter("language");
 
-// не совсем понятно зачем это было нужно если поля required...		
+// не совсем понятно зачем это было нужно если поля required, сдругой стороны вдруг другая страница будет...
 //		if (url != null) {
 //			List<Feedback> feedbacksList = AfaService.getFeedbacksList(url);
 //			request.setAttribute("feedbacksList", feedbacksList);

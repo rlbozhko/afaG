@@ -44,6 +44,7 @@ public class Feedback {
 		this.language = language;
 	}
 
+	// To-do Учти что надо переделать
 	public String getCountry() {
 		return country;
 	}

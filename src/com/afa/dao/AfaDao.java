@@ -1,21 +1,15 @@
 package com.afa.dao;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import com.afa.entities.Feedback;
+
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.afa.entities.Feedback;
-
 public class AfaDao {
 
-	private static final int THREE_DAYS_IN_MILLISECONDS = 3 * 24 * 60 * 60
+	private static final int FIVE_DAYS_IN_MILLISECONDS = 5 * 24 * 60 * 60
 			* 1000;
 
 	public static void cacheFeedbacksList(List<Feedback> feedbacksList) {
@@ -37,7 +31,7 @@ public class AfaDao {
 						"jdbc:mysql://localhost:3306/afa?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8",
 						"root", "123456");
 				PreparedStatement preparedStatement = connection
-						.prepareStatement(sql);) {
+						.prepareStatement(sql)) {
 
 			for (int i = 0; i < feedbacksList.size(); i++) {
 				Feedback feedback = feedbacksList.get(i);
@@ -89,7 +83,7 @@ public class AfaDao {
 		try (Connection connection = DriverManager.getConnection(
 				"jdbc:mysql://localhost:3306/afa", "root", "123456");
 				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery(sql);) {
+			 ResultSet resultSet = statement.executeQuery(sql)) {
 
 			while (resultSet.next()) {
 				Feedback feedback = new Feedback();
@@ -126,7 +120,7 @@ public class AfaDao {
 		try (Connection connection = DriverManager.getConnection(
 				"jdbc:mysql://localhost:3306/afa", "root", "123456");
 				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery(sql + " LIMIT 1");) {
+			 ResultSet resultSet = statement.executeQuery(sql + " LIMIT 1")) {
 
 			if (!resultSet.next()) {
 				return true;
@@ -137,7 +131,7 @@ public class AfaDao {
 			// выполнятся с учетом задержек при выкачке из инета
 			// 24*60*60*1000 = 1 день
 			long scanDateSQL = resultSet.getLong("scan_date");
-			if ((scanDate - scanDateSQL) > THREE_DAYS_IN_MILLISECONDS) {
+			if ((scanDate - scanDateSQL) > FIVE_DAYS_IN_MILLISECONDS) {
 				String sqlDelete = "DELETE FROM feedbacks WHERE item_id = "
 						+ itemId;
 				statement.execute(sqlDelete);

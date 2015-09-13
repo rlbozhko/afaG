@@ -5,9 +5,6 @@ package com.afa.service;
 import com.afa.dao.AfaDao;
 import com.afa.entities.Feedback;
 import com.afa.utils.Utils;
-import com.cybozu.labs.langdetect.Detector;
-import com.cybozu.labs.langdetect.DetectorFactory;
-import com.cybozu.labs.langdetect.LangDetectException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,25 +12,32 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/*
+//https://www.google.com/search?q=cybozu.labs
+import com.cybozu.labs.langdetect.Detector;
+import com.cybozu.labs.langdetect.DetectorFactory;
+import com.cybozu.labs.langdetect.LangDetectException;
+*/
+
 // to-do выкачай библиотеку со старого компа или измени алгоритм
 
 public class AfaService {
 
 	private static int countDetectorFactory = 0;
 
-	private static void loadDetectorFactory() {
-		if (countDetectorFactory == 0) {
-			try {
-				DetectorFactory.clear();
-				DetectorFactory
-						.loadProfile("C:\\Java\\workspace1\\.metadata\\.plugins\\org.eclipse.wst.server.core\\tmp0\\wtpwebapps\\AFA\\WEB-INF\\lib\\profiles");
-				countDetectorFactory = countDetectorFactory + 1;
-
-			} catch (LangDetectException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+//	private static void loadDetectorFactory() {
+//		if (countDetectorFactory == 0) {
+//			try {
+//				DetectorFactory.clear();
+//				DetectorFactory
+//						.loadProfile("C:\\Java\\workspace1\\.metadata\\.plugins\\org.eclipse.wst.server.core\\tmp0\\wtpwebapps\\AFA\\WEB-INF\\lib\\profiles");
+//				countDetectorFactory = countDetectorFactory + 1;
+//
+//			} catch (LangDetectException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	}
 
 	// В зависимости от количества звезд и языка выбранных на странице,
 	// мы удаляем из списка все записи с не таким к-вом звезд и языком
@@ -126,19 +130,20 @@ public class AfaService {
 		if (!feedbacksList.isEmpty()) {
 			// Так можно узнать какая директория текущая
 			// System.out.println(new File(".").getAbsolutePath());
-			loadDetectorFactory();
+//			loadDetectorFactory();
 			for (Feedback each : feedbacksList) {
-				if (each.getText().length() > 10) {
-					try {
-						Detector detector = DetectorFactory.create();
-						detector.append(each.getText());
-
-						String language = detector.detect();
-						each.setLanguage(language);
-					} catch (LangDetectException e) {
-						e.printStackTrace();
-					}
-				}
+//				if (each.getText().length() > 10) {
+//					try {
+//						Detector detector = DetectorFactory.create();
+//						detector.append(each.getText());
+//
+//						String language = detector.detect();
+//						each.setLanguage(language);
+//					} catch (LangDetectException e) {
+//						e.printStackTrace();
+//					}
+//				}
+				each.setLanguage("-");
 			}
 
 			AfaDao.cacheFeedbacksList(feedbacksList);
